@@ -281,7 +281,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize); err != nil {
+	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize, config.DockerImage); err != nil {
 		log.Println(err)
 	}
 
@@ -296,7 +296,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	return out.String(), b64img, err
 }
 
-func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
+func getImagesFromDockerVolume(dstPath, vol string, size int64, dockerImage string) error {
 	// do not use 'cp'. special device files hurts the system
 	sizeStr := strconv.FormatInt(size*1024*1024, 10)
 	name, _ := randStr(10)
@@ -306,9 +306,9 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 	resp, err := dkclient.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image: "bash",
+			Image: dockerImage,
 			Cmd: []string{
-				"-c",
+				"bash",	"-c",
 				oneLiner(
 					"ls -A -1d /src/*", "|",
 					"while read -r f;", "do [[ -f \"$f\" ]] && head -c", sizeStr,
